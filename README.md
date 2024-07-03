@@ -1,9 +1,14 @@
 # GisDeflate
-
 GDeflate decompression in C# with zero native dependencies.
 
 ## Install
+`nuget install GisDeflate`
 
+## Usage
+```cs
+byte[] compressed = File.ReadAllBytes("foo.bin");
+byte[] decompressed = GDeflate.Decompress(compressed);
+```
 
 ## Credits
 Naturally, this code is a port of the reference implementation by [Microsoft](https://github.com/microsoft/DirectStorage/tree/main/GDeflate)
