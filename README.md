@@ -6,6 +6,8 @@ GDeflate decompression in C# with zero native dependencies.
 
 ## Usage
 ```cs
+using GisDeflate;
+
 byte[] compressed = File.ReadAllBytes("foo.bin");
 byte[] decompressed = GDeflate.Decompress(compressed);
 ```
