@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+	<LangVersion>12</LangVersion>
+	<Title>GisDeflate</Title>
+	<AnalysisLevel>latest-all</AnalysisLevel>
+	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	<Company>skzk</Company>
+	<Authors>skzk</Authors>
+	<FileVersion>1.0.0</FileVersion>
+	<PackageProjectUrl></PackageProjectUrl>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
+	<RepositoryUrl>https://github.com/sk-zk/GisDeflate</RepositoryUrl>
+	<RepositoryType>git</RepositoryType>
+	<PackageTags>gdeflate</PackageTags>
+	<AssemblyVersion>1.0.0</AssemblyVersion>
+	<Description>Managed GDeflate decompression </Description>
+	<PackageLicenseFile>README.md</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
