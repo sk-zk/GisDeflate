@@ -8,16 +8,24 @@ namespace GisDeflate
 {
     internal static class DecodeResults
     {
+        /// <summary>
+        /// Shift a decode result into its position in the decode table entry.
+        /// </summary>
+        public static uint HuffDecResultEntry(uint result)
+        {
+            return result << Deflate.HuffDecResultShift;
+        }
+
         public static uint[] GenerateOffsetDecodeResults()
         {
-            const int HuffDecExtraOffsetBitsShift = 16;
-
             static uint Entry(int offsetBase, int numExtraBits)
             {
-                return HuffDecResultEntry((uint)((numExtraBits << HuffDecExtraOffsetBitsShift) | offsetBase));
+                return HuffDecResultEntry(
+                    (uint)((numExtraBits << Deflate.HuffDecExtraOffsetBitsShift) 
+                    | offsetBase));
             }
 
-            return new uint[] {
+            return [
                 Entry(1     , 0)  , Entry(2     , 0)  , Entry(3     , 0)  , Entry(4     , 0)  ,
                 Entry(5     , 1)  , Entry(7     , 1)  , Entry(9     , 2)  , Entry(13    , 2)  ,
                 Entry(17    , 3)  , Entry(25    , 3)  , Entry(33    , 4)  , Entry(49    , 4)  ,
@@ -26,23 +34,16 @@ namespace GisDeflate
                 Entry(1025  , 9)  , Entry(1537  , 9)  , Entry(2049  , 10) , Entry(3073  , 10) ,
                 Entry(4097  , 11) , Entry(6145  , 11) , Entry(8193  , 12) , Entry(12289 , 12) ,
                 Entry(16385 , 13) , Entry(24577 , 13) , Entry(32769 , 14) , Entry(49153 , 14) ,
-            };
-        }
-
-        public static uint HuffDecResultEntry(uint result)
-        {
-            return result << Deflate.HuffDecResultShift;
+            ];
         }
 
         public static uint[] GenerateLitlenDecodeResults(uint numLitlenSyms)
         {
-            const int HuffDecLiteral = 0x40000000;
-
             var results = new uint[numLitlenSyms];
 
             for (uint i = 0; i < 256; i++)
             {
-                results[i] = (i << 8) | HuffDecLiteral;
+                results[i] = (i << 8) | Deflate.HuffDecLiteral;
             }
 
             // you didn't see that.

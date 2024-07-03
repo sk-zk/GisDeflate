@@ -13,28 +13,97 @@ namespace GisDeflate
 {
     internal static class Deflate
     {
-        public const int HuffDecResultShift = 8;
-        public const int DeflateNumPrecodeSyms = 19;
+        /// <summary>
+        /// The number of bits to keep in input buffer.
+        /// </summary>
+        const int LowWatermarkBits = 32;
 
+        /// <summary>
+        /// Number of bits per GDeflate bit-packet.
+        /// </summary>
         const int BitsPerPacket = 32;
+
+        /// <summary>
+        /// Number of GDeflate streams.
+        /// </summary>
         const int NumStreams = 32;
 
-        // This flag is set in all main decode table entries that represent subtable pointers.
-        const uint HuffDecSubtablePointer = 0x80000000;
+        // Number of symbols in each Huffman code. Note: for the literal/length
+        // and offset codes, these are actually the maximum values; a given block
+        // might use fewer symbols.
+        public const int DeflateNumPrecodeSyms = 19;
+        const int DeflateNumLitlenSyms = 288;
 
-        // Mask for extracting the codeword length from a decode table entry.
-        const byte HuffDecLengthMask = 0xFF;
+        // Maximum codeword length, in bits, within each Huffman code
+        const int DeflateMaxPreCodewordLen = 7;
+        const int DeflateMaxCodewordLen = 15;
+        const int DeflateMaxLitlenCodewordLen = 15;
+        const int DeflateMaxOffsetCodewordLen = 15;
 
-        // The order in which precode lengths are stored.
+        /// <summary>
+        /// The order in which precode lengths are stored.
+        /// </summary>
         static readonly byte[] DeflatePrecodeLensPermutation = new byte[]
         {
             16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
         };
 
-        readonly static uint[] OffsetDecodeResults = DecodeResults.GenerateOffsetDecodeResults();
-        const int DeflateNumLitlenSyms = 288;
-        readonly static uint[] LitlenDecodeResults = DecodeResults.GenerateLitlenDecodeResults(DeflateNumLitlenSyms);
+        // Each TABLEBITS number is the base-2 logarithm of the number of entries in the
+        // main portion of the corresponding decode table.  Each number should be large
+        // enough to ensure that for typical data, the vast majority of symbols can be
+        // decoded by a direct lookup of the next TABLEBITS bits of compressed data.
+        // However, this must be balanced against the fact that a larger table requires
+        // more memory and requires more time to fill.
+        // 
+        // Note: you cannot change a TABLEBITS number without also changing the
+        // corresponding ENOUGH number!
+        const int PrecodeTableBits = 7;
+        const int LitlenTableBits = 10;
+        const int OffsetTableBits = 8;
+
+        /// <summary>
+        /// Shift to extract the decode result from a decode table entry. 
+        /// </summary>
+        public const int HuffDecResultShift = 8;
+
+        /// <summary>
+        /// This flag is set in all main decode table entries that represent subtable pointers.
+        /// </summary>
+        const uint HuffDecSubtablePointer = 0x80000000;
+
+        /// <summary>
+        /// Mask for extracting the codeword length from a decode table entry.
+        /// </summary>
+        const byte HuffDecLengthMask = 0xFF;
+
+        /// <summary>
+        /// This flag is set in all entries in the litlen decode table that represent literals.
+        /// </summary>
+        public const uint HuffDecLiteral = 0x40000000;
+        
+        const int HuffDecLengthBaseShift = 8;
+        const int HuffDecExtraLengthBitsMask = 0xff;
+
+        const int HuffDecEndOfBlockLength = 0;
+
+        public const int HuffDecExtraOffsetBitsShift = 16;
+
+        const int HuffDecOffsetBaseMask = (1 << HuffDecExtraOffsetBitsShift) - 1;
+
+        /// <summary>
+        /// The decode result for each precode symbol. There is no special optimization for the precode;
+        /// the decode result is simply the symbol value.
+        /// </summary>
         readonly static uint[] PrecodeDecodeResults = DecodeResults.GeneratePrecodeDecodeResults();
+        /// <summary>
+        /// The decode result for each litlen symbol. For literals, this is the literal value itself and the
+        /// HUFFDEC_LITERAL flag. For lengths, this is the length base and the number of extra length bits.
+        /// </summary>
+        readonly static uint[] LitlenDecodeResults = DecodeResults.GenerateLitlenDecodeResults(DeflateNumLitlenSyms);
+        /// <summary>
+        /// The decode result for each offset symbol. This is the offset base and the number of extra offset bits.
+        /// </summary>
+        readonly static uint[] OffsetDecodeResults = DecodeResults.GenerateOffsetDecodeResults();
 
         public static void TileDecompressionJob(DecompressionContext context, byte[] inData, int[] tileOffsets)
         {
@@ -125,7 +194,6 @@ namespace GisDeflate
             // BTYPE: 2 bits
             blockType = (BlockType)PopBits(s, 2);
 
-            const int LowWatermarkBits = 32;
             EnsureBits(LowWatermarkBits);
 
             actualInNBytesRet = 0;
@@ -168,11 +236,9 @@ namespace GisDeflate
                     uint repCount;
 
                     // Read the next precode symbol.
-                    const int DeflateMaxPreCodewordLen = 7;
                     entry = decompressor.U.L.PrecodeDecodeTable[Bits(s, DeflateMaxPreCodewordLen)];
                     RemoveBits(s, (int)(entry & HuffDecLengthMask));
 
-                    const int HuffDecResultShift = 8;
                     presym = entry >> HuffDecResultShift;
 
                     if (presym < 16)
@@ -290,10 +356,6 @@ namespace GisDeflate
 
             // The main GDEFLATE decode loop
 
-            const int LitlenTableBits = 10;
-            // This flag is set in all entries in the litlen decode table that represent literals.
-            const uint HuffDecLiteral = 0x40000000;
-
             while (true)
             {
                 uint entry;
@@ -327,8 +389,6 @@ namespace GisDeflate
                     // Match or end-of-block
                     entry >>= HuffDecResultShift;
 
-                    const int HuffDecLengthBaseShift = 8;
-                    const int HuffDecExtraLengthBitsMask = 0xff;
                     length = (entry >> HuffDecLengthBaseShift)
                         + PopBits(s, (int)(entry & HuffDecExtraLengthBitsMask));
 
@@ -339,7 +399,6 @@ namespace GisDeflate
                     // SIZE_MAX.
                     if (length - 1 >= outEndIdx - outNextIdx)
                     {
-                        const int HuffDecEndOfBlockLength = 0;
                         if (length != HuffDecEndOfBlockLength)
                             throw new InvalidOperationException("Out of space");
                         goto block_done;
@@ -469,7 +528,6 @@ namespace GisDeflate
             uint outNextIdx = s.Copies[s.Idx].OutNextIdx;
 
             // Decode the match offset.
-            const int OffsetTableBits = 8;
             entry = decompressor.OffsetDecodeTable[Bits(s, OffsetTableBits)];
             if ((entry & HuffDecSubtablePointer) != 0)
             {
@@ -485,8 +543,6 @@ namespace GisDeflate
 
             // Pop the extra offset bits and add them to the offset base
             // to produce the full offset.
-            const int HuffDecExtraOffsetBitsShift = 16;
-            const int HuffDecOffsetBaseMask = (1 << HuffDecExtraOffsetBitsShift) - 1;
             offset = (entry & HuffDecOffsetBaseMask)
                 + PopBits(s, (int)(entry >> HuffDecExtraOffsetBitsShift));
 
@@ -505,9 +561,6 @@ namespace GisDeflate
         /// </summary>
         static void BuildOffsetDecodeTable(Decompressor decompressor, uint numLitlenSyms, uint numOffsetSyms)
         {
-            const int OffsetTableBits = 8;
-            const int DeflateMaxOffsetCodewordLen = 15;
-
             BuildDecodeTable(decompressor.OffsetDecodeTable,
                 decompressor.U.L.Lens[(int)numLitlenSyms..],
                 numOffsetSyms,
@@ -522,9 +575,6 @@ namespace GisDeflate
         /// </summary>
         static void BuildLitlenDecodeTable(Decompressor decompressor, uint numLitlenSyms)
         {
-            const int LitlenTableBits = 10;
-            const int DeflateMaxLitlenCodewordLen = 15;
-
             BuildDecodeTable(decompressor.U.LitlenDecodeTable,
                 decompressor.U.L.Lens,
                 numLitlenSyms,
@@ -539,9 +589,6 @@ namespace GisDeflate
         /// </summary>
         static void BuildPrecodeDecodeTable(Decompressor decompressor)
         {
-            const int PrecodeTableBits = 7;
-            const int DeflateMaxPreCodewordLen = 7;
-
             BuildDecodeTable(decompressor.U.L.PrecodeDecodeTable,
                 decompressor.U.PrecodeLens,
                 DeflateNumPrecodeSyms,
@@ -564,8 +611,6 @@ namespace GisDeflate
             uint tableBits, uint maxCodewordLen, ushort[] sortedSyms
             )
         {
-            const int DeflateMaxCodewordLen = 15;
-
             uint[] lenCounts = new uint[DeflateMaxCodewordLen + 1];
             uint[] offsets = new uint[DeflateMaxCodewordLen + 1];
             uint sym; // current symbol
@@ -744,7 +789,6 @@ namespace GisDeflate
                     // which the subtable is indexed (the log base 2 of the
                     // number of entries it contains).
 
-                    const uint HuffDecSubtablePointer = 0x80000000;
                     decodeTable[subtablePrefix] = HuffDecSubtablePointer
                         | DecodeResults.HuffDecResultEntry(subtableStart)
                         | subtableBits;
