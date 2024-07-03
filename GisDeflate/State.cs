@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 
 namespace GisDeflate
 {
+    /// <summary>
+    /// GDeflate state structure.
+    /// </summary>
     internal struct State
     {
-        public ulong[] BitBuf = new ulong[32];
-        public int[] BitsLeft = new int[32];
-        public DeferredCopy[] Copies = new DeferredCopy[32];
+        public ulong[] BitBuf = new ulong[Deflate.NumStreams];
+        public int[] BitsLeft = new int[Deflate.NumStreams];
+        public DeferredCopy[] Copies = new DeferredCopy[Deflate.NumStreams];
         public uint Idx = 0;
 
         public State()

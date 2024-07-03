@@ -26,19 +26,30 @@ namespace GisDeflate
         /// <summary>
         /// Number of GDeflate streams.
         /// </summary>
-        const int NumStreams = 32;
+        public const int NumStreams = 32;
+
+        /// <summary>
+        /// The maximum number of symbols across all codes.
+        /// </summary>
+        public const int DeflateMaxNumSyms = 288;
 
         // Number of symbols in each Huffman code. Note: for the literal/length
         // and offset codes, these are actually the maximum values; a given block
         // might use fewer symbols.
         public const int DeflateNumPrecodeSyms = 19;
-        const int DeflateNumLitlenSyms = 288;
+        public const int DeflateNumLitlenSyms = 288;
+        public const int DeflateNumOffsetSyms = 32;
 
         // Maximum codeword length, in bits, within each Huffman code
         const int DeflateMaxPreCodewordLen = 7;
         const int DeflateMaxCodewordLen = 15;
         const int DeflateMaxLitlenCodewordLen = 15;
         const int DeflateMaxOffsetCodewordLen = 15;
+
+        /// <summary>
+        /// Maximum possible overrun when decoding codeword lengths.
+        /// </summary>
+        public const int DeflateMaxLensOverrun = 137;
 
         /// <summary>
         /// The order in which precode lengths are stored.
@@ -49,7 +60,7 @@ namespace GisDeflate
         };
 
         // Each TABLEBITS number is the base-2 logarithm of the number of entries in the
-        // main portion of the corresponding decode table.  Each number should be large
+        // main portion of the corresponding decode table. Each number should be large
         // enough to ensure that for typical data, the vast majority of symbols can be
         // decoded by a direct lookup of the next TABLEBITS bits of compressed data.
         // However, this must be balanced against the fact that a larger table requires
