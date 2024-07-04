@@ -12,7 +12,7 @@ namespace GisDeflate
     internal struct State
     {
         public ulong[] BitBuf = new ulong[Deflate.NumStreams];
-        public int[] BitsLeft = new int[Deflate.NumStreams];
+        public uint[] BitsLeft = new uint[Deflate.NumStreams];
         public DeferredCopy[] Copies = new DeferredCopy[Deflate.NumStreams];
         public uint Idx = 0;
 

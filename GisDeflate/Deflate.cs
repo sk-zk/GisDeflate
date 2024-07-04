@@ -131,11 +131,10 @@ namespace GisDeflate
                     ? tileOffsets[(int)tileIndex] 
                     : 0;
 
-                var start = tileOffset;
                 var length = tileIndex < context.NumItems - 1 
                     ? tileOffsets[(int)tileIndex + 1] - tileOffset 
                     : tileOffsets[0];
-                var compressedPage = inData[start..(start + length)];
+                var compressedPage = inData[tileOffset..(tileOffset + length)];
 
                 var outputOffset = tileIndex * TileStream.KDefaultTileSize;
 
@@ -322,7 +321,28 @@ namespace GisDeflate
             }
             else if (blockType == BlockType.Uncompressed)
             {
-                throw new NotImplementedException();
+                // Uncompressed block: copy 'len' bytes literally from the input
+                // buffer to the output buffer.
+
+                // Count bits in the bit buffers.
+                uint numBufferedBits = 0;
+                for (int n = 0; n < NumStreams; n++)
+                    numBufferedBits += s.BitsLeft[n];
+
+                var len = PopBits(s, 16);
+
+                if (len > outEndIdx - outNextIdx)
+                    throw new InvalidDataException("Insufficient space");
+
+                while (len > 0)
+                {
+                    out_[outNextIdx] = (byte)PopBits(s, 8);
+                    outNextIdx++;
+                    len--;
+                    Advance();
+                }
+
+                goto block_done;
             }
             else if (blockType == BlockType.StaticHuffman)
             {
@@ -400,6 +420,8 @@ namespace GisDeflate
                     // Match or end-of-block
                     entry >>= HuffDecResultShift;
 
+                    // Pop the extra length bits and add them to the length base to
+                    // produce the full length.
                     length = (entry >> HuffDecLengthBaseShift)
                         + PopBits(s, (int)(entry & HuffDecExtraLengthBitsMask));
 
@@ -478,7 +500,7 @@ namespace GisDeflate
             {
                 if (s.BitsLeft[s.Idx] < n)
                 {
-                    s.BitBuf[s.Idx] |= (ulong)Utils.GetUnalignedLe32(page, (int)inNextIdx) << s.BitsLeft[s.Idx];
+                    s.BitBuf[s.Idx] |= (ulong)Utils.GetUnalignedLe32(page, (int)inNextIdx) << (int)s.BitsLeft[s.Idx];
                     inNextIdx += BitsPerPacket / 8;
                     s.BitsLeft[s.Idx] += BitsPerPacket;
                 }
@@ -513,7 +535,7 @@ namespace GisDeflate
         static void RemoveBits(State s, int n)
         {
             s.BitBuf[s.Idx] >>= n;
-            s.BitsLeft[s.Idx] -= n;
+            s.BitsLeft[s.Idx] -= (uint)n;
         }
 
         /// <summary>
