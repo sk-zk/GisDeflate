@@ -445,7 +445,7 @@ namespace GisDeflate
                 }
                 else
                 {
-                    DoCopy(decompressor, ref s, out_);
+                    DoCopy(decompressor, s, out_);
                     CopyComplete();
                 }
 
@@ -457,7 +457,7 @@ namespace GisDeflate
             {
                 if ((isCopy & 1) == 1)
                 {
-                    DoCopy(decompressor, ref s, out_);
+                    DoCopy(decompressor, s, out_);
                     CopyComplete();
                 }
                 Advance();
@@ -551,7 +551,7 @@ namespace GisDeflate
         /// <summary>
         /// Perform a deferred GDeflate copy.
         /// </summary>
-        static void DoCopy(Decompressor decompressor, ref State s, byte[] out_)
+        static void DoCopy(Decompressor decompressor, State s, byte[] out_)
         {
             uint entry;
             uint offset;
@@ -583,6 +583,7 @@ namespace GisDeflate
             var srcIdx = outNextIdx - offset;
             var dstIdx = outNextIdx;
             outNextIdx += length;
+
             do
             {
                 out_[dstIdx++] = out_[srcIdx++];
