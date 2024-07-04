@@ -9,14 +9,14 @@
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	<Company>skzk</Company>
 	<Authors>skzk</Authors>
-	<FileVersion>1.0.0</FileVersion>
+	<AssemblyVersion>1.0.1</AssemblyVersion>
+	<FileVersion>1.0.1</FileVersion>
 	<PackageProjectUrl></PackageProjectUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
 	<RepositoryUrl>https://github.com/sk-zk/GisDeflate</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
 	<PackageTags>gdeflate</PackageTags>
-	<AssemblyVersion>1.0.0</AssemblyVersion>
-	<Description>Managed GDeflate decompression </Description>
+	<Description>Managed GDeflate decompression</Description>
 	<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
 
