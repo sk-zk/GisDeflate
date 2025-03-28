@@ -9,9 +9,9 @@
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	<Company>skzk</Company>
 	<Authors>skzk</Authors>
-	<Version>1.0.1</Version>
-	<AssemblyVersion>1.0.1</AssemblyVersion>
-	<FileVersion>1.0.1</FileVersion>
+	<Version>1.0.2</Version>
+	<AssemblyVersion>1.0.2</AssemblyVersion>
+	<FileVersion>1.0.2</FileVersion>
 	<PackageProjectUrl></PackageProjectUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
 	<RepositoryUrl>https://github.com/sk-zk/GisDeflate</RepositoryUrl>
@@ -19,9 +19,15 @@
 	<PackageTags>gdeflate</PackageTags>
 	<Description>Managed GDeflate decompression</Description>
 	<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+	<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+	<EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
-  <ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+	</ItemGroup>
+
+	<ItemGroup>
     <None Include="..\LICENSE.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
