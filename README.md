@@ -2,7 +2,7 @@
 GDeflate decompression in C# with zero native dependencies.
 
 ## Install
-`nuget install GisDeflate`
+`dotnet add package GisDeflate`
 
 ## Usage
 ```cs
